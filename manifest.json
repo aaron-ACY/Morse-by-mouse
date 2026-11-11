@@ -11,7 +11,7 @@
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Morse by Mouse (Alt+M)",
+    "default_title": "Morse by Mouse (Trái+Phải: Bật/Tắt • Alt+M: Hiện/Tắt HUD)",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -26,7 +26,7 @@
       "suggested_key": {
         "default": "Alt+M"
       },
-      "description": "Bật hoặc tắt chế độ gõ Morse bằng chuột phải"
+      "description": "Hiện hoặc tắt hẳn popup hỗ trợ nổi (HUD)"
     }
   },
   "content_scripts": [

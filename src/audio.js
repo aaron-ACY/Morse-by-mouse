@@ -34,6 +34,10 @@
       return Math.max(0.0001, volume * 0.36);
     }
 
+    function computeActionPeak() {
+      return Math.max(0.0001, volume * 0.95);
+    }
+
     function setEnabled(value) {
       enabled = Boolean(value);
       if (!enabled) {
@@ -123,7 +127,7 @@
       stopImmediate();
     }
 
-    function playShortBeep(freqStart, freqEnd, duration = 0.055, peakGain = computeTickPeak()) {
+    function playShortBeep(freqStart, freqEnd, duration = 0.055, peakGain = computeTickPeak(), sustainRatio = 0) {
       if (!enabled || volume <= 0) return;
       const audioCtx = ensureContext();
       if (!audioCtx) return;
@@ -142,6 +146,10 @@
         }
         tickGain.gain.setValueAtTime(0.0001, now);
         tickGain.gain.linearRampToValueAtTime(peakGain, now + 0.004);
+        const sustainEnd = Math.min(duration - 0.006, Math.max(0.004, duration * sustainRatio));
+        if (sustainRatio > 0 && sustainEnd > 0.004) {
+          tickGain.gain.setValueAtTime(peakGain, now + sustainEnd);
+        }
         tickGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
         tickOsc.connect(tickGain);
         tickGain.connect(audioCtx.destination);
@@ -159,11 +167,11 @@
     }
 
     function playSpaceTick() {
-      playShortBeep(440, 440, 0.05, computeTickPeak());
+      playShortBeep(520, 520, 0.085, computeActionPeak(), 0.65);
     }
 
     function playDeleteTick() {
-      playShortBeep(380, 220, 0.06, computeTickPeak());
+      playShortBeep(540, 340, 0.07, computeActionPeak(), 0.6);
     }
 
     return {
@@ -179,5 +187,10 @@
     };
   }
 
-  root.MorseAudio = { createSidetone };
+  const api = { createSidetone };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  }
+  root.MorseAudio = api;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

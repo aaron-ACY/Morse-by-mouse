@@ -18,7 +18,7 @@
     : {
         NORMAL: { badge: 'Normal Mode', desc: 'Đang nhập chữ cái' },
         WAITING_FOR_DIACRITIC: { badge: 'Diacritic Mode', desc: 'Đang chờ nhập dấu' },
-        WAITING_FOR_TONE: { badge: 'Tone Mode', desc: 'Đang chờ nhập thanh điệu' }
+        WAITING_FOR_TONE: { badge: 'Tone Mode', desc: 'Đang chờ thanh điệu hoặc đổi dấu' }
       };
   const VIETNAMESE_REFERENCE_GROUPS = vietnameseMorse
     ? vietnameseMorse.VIETNAMESE_REFERENCE_GROUPS
@@ -55,7 +55,7 @@
   const IS_TOP_FRAME = window === window.top;
 
   let settings = {
-    enabled: true,
+    enabled: false,
     scope: 'always',
     dashThresholdMs: DEFAULT_CONFIG.dashThresholdMs,
     letterGapMs: DEFAULT_CONFIG.letterGapMs,
@@ -74,6 +74,31 @@
   let leftSuppressResetTimer = null;
   let suppressAuxButton = null;
   let auxResetTimer = null;
+  const heldMouseButtons = new Set();
+  const chordConsumedButtons = new Set();
+
+  function clearMouseChordState() {
+    heldMouseButtons.clear();
+    chordConsumedButtons.clear();
+  }
+
+  function togglePluginEnabled() {
+    const next = !settings.enabled;
+    if (settings.soundEnabled) {
+      if (next) {
+        applySettings({ enabled: true });
+        sidetone.playDotTick();
+      } else {
+        sidetone.playDeleteTick();
+        applySettings({ enabled: false });
+      }
+    } else {
+      applySettings({ enabled: next });
+    }
+    if (chrome?.storage?.local) {
+      chrome.storage.local.set({ enabled: next });
+    }
+  }
 
   const sidetone = createSidetone();
 
@@ -362,9 +387,6 @@
           font-size: 12px;
           line-height: 1.4;
           user-select: none;
-        }
-        .card.disabled {
-          opacity: 0.78;
         }
         .header {
           display: flex;
@@ -801,7 +823,7 @@
             <span class="target-pill" id="targetPill" hidden></span>
           </div>
           <div class="controls" id="headerControls">
-            <button class="btn" id="toggleBtn" title="Bật/Tắt (Alt+M)">ON</button>
+            <button class="btn" id="toggleBtn" title="Bật/Tắt plugin (Chuột Trái + Phải)">OFF</button>
             <button class="btn" id="soundBtn" title="Âm thanh bíp">🔊</button>
             <button class="btn" id="collapseBtn" title="Thu gọn">—</button>
           </div>
@@ -894,12 +916,7 @@
     });
 
     hudRefs.toggleBtn.addEventListener('click', () => {
-      const next = !settings.enabled;
-      if (chrome?.storage?.local) {
-        chrome.storage.local.set({ enabled: next });
-      } else {
-        applySettings({ enabled: next });
-      }
+      togglePluginEnabled();
     });
 
     hudRefs.soundBtn.addEventListener('click', () => {
@@ -1210,11 +1227,11 @@
       const ph = document.createElement('span');
       ph.className = 'placeholder';
       if (!settings.enabled) {
-        ph.textContent = 'Đang tạm tắt (Alt+M để bật)';
+        ph.textContent = 'Đang tắt — nhấn Trái + Phải để bật';
       } else if (vnState === VN_STATES.WAITING_FOR_DIACRITIC) {
         ph.textContent = 'Nhập mã dấu tạo chữ / thanh điệu...';
       } else if (vnState === VN_STATES.WAITING_FOR_TONE) {
-        ph.textContent = 'Nhập mã thanh điệu (Sắc..Nặng)...';
+        ph.textContent = 'Nhập mã thanh điệu hoặc đổi dấu tạo chữ...';
       } else {
         ph.textContent = 'Nhấn chuột để gõ Morse...';
       }
@@ -1461,6 +1478,31 @@
   window.addEventListener(
     'mousedown',
     (e) => {
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && (e.button === 0 || e.button === 2)) {
+        if (typeof e.buttons === 'number' && e.buttons !== 0) {
+          if ((e.buttons & 1) === 0 && e.button !== 0) heldMouseButtons.delete(0);
+          if ((e.buttons & 2) === 0 && e.button !== 2) heldMouseButtons.delete(2);
+        }
+        heldMouseButtons.add(e.button);
+        const bothHeld =
+          (heldMouseButtons.has(0) && heldMouseButtons.has(2)) ||
+          (typeof e.buttons === 'number' && (e.buttons & 3) === 3);
+
+        if (bothHeld && !isEventInsideHud(e)) {
+          mouseController.cancel();
+          chordConsumedButtons.add(0);
+          chordConsumedButtons.add(2);
+          suppressNextLeftClick = true;
+          scheduleLeftSuppressReset();
+          suppressNextContextMenu = true;
+          scheduleSuppressReset();
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          togglePluginEnabled();
+          return;
+        }
+      }
+
       if (!shouldInterceptMouseButton(e)) return;
 
       const pathTarget = typeof e.composedPath === 'function' ? e.composedPath()[0] : e.target;
@@ -1504,6 +1546,23 @@
   window.addEventListener(
     'mouseup',
     (e) => {
+      if (e.button === 0 || e.button === 2) {
+        heldMouseButtons.delete(e.button);
+      }
+      if (chordConsumedButtons.has(e.button)) {
+        chordConsumedButtons.delete(e.button);
+        if (e.button === 0) {
+          suppressNextLeftClick = true;
+          scheduleLeftSuppressReset();
+        } else if (e.button === 2) {
+          suppressNextContextMenu = true;
+          scheduleSuppressReset();
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+
       if (mouseController.getActiveButton() !== e.button) return;
       mouseController.handleMouseUp(e.button);
       e.preventDefault();
@@ -1573,11 +1632,13 @@
   );
 
   window.addEventListener('blur', () => {
+    clearMouseChordState();
     mouseController.cancel();
   });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      clearMouseChordState();
       mouseController.cancel();
     }
   });
@@ -1588,6 +1649,25 @@
   window.addEventListener(
     'keydown',
     (e) => {
+      if (
+        !chrome?.runtime?.id &&
+        e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        (e.code === 'KeyM' || (e.key && e.key.toLowerCase() === 'm'))
+      ) {
+        if (e.repeat) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const nextShow = !settings.showHud;
+        if (chrome?.storage?.local) {
+          chrome.storage.local.set({ showHud: nextShow });
+        }
+        applySettings({ showHud: nextShow });
+        return;
+      }
+
       if (!settings.enabled) return;
 
       const activeEditable = getActiveEditable();

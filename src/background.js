@@ -5,7 +5,7 @@ importScripts('morse-bindings.js');
 const { cloneDefaultBindings, migrateLegacySettingsToBindings } = self.MorseBindings;
 
 const DEFAULT_SETTINGS = {
-  enabled: true,
+  enabled: false,
   scope: 'always', // 'always' | 'inputs-only'
   dashThresholdMs: 200,
   letterGapMs: 600,
@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS = {
   soundVolume: 80,
   showHud: true,
   bindings: cloneDefaultBindings(),
-  settingsVersion: 4
+  settingsVersion: 5
 };
 
 async function ensureDefaults() {
@@ -43,14 +43,24 @@ async function ensureDefaults() {
 
   if ((current.settingsVersion || 1) < 4) {
     patch.bindings = migrateLegacySettingsToBindings(current);
-    patch.settingsVersion = 4;
+    hasPatch = true;
+  }
+
+  if ((current.settingsVersion || 1) < 5) {
+    patch.enabled = false;
+    patch.settingsVersion = 5;
     hasPatch = true;
   }
 
   if (hasPatch) {
     await chrome.storage.local.set(patch);
   }
-  const enabled = current.enabled !== undefined ? current.enabled : DEFAULT_SETTINGS.enabled;
+  const enabled =
+    patch.enabled !== undefined
+      ? patch.enabled
+      : current.enabled !== undefined
+      ? current.enabled
+      : DEFAULT_SETTINGS.enabled;
   await updateBadge(enabled);
 }
 
@@ -66,13 +76,11 @@ async function updateBadge(enabled) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  ensureDefaults();
-});
+chrome.runtime.onInstalled.addListener(() => ensureDefaults());
 
 chrome.runtime.onStartup.addListener(async () => {
-  const { enabled } = await chrome.storage.local.get({ enabled: DEFAULT_SETTINGS.enabled });
-  await updateBadge(enabled);
+  await chrome.storage.local.set({ enabled: false });
+  await updateBadge(false);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -84,6 +92,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'toggle-morse') return;
-  const { enabled } = await chrome.storage.local.get({ enabled: DEFAULT_SETTINGS.enabled });
-  await chrome.storage.local.set({ enabled: !enabled });
+  const { showHud } = await chrome.storage.local.get({ showHud: DEFAULT_SETTINGS.showHud });
+  await chrome.storage.local.set({ showHud: !showHud });
 });

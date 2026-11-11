@@ -291,9 +291,9 @@
           sidetone.start();
           if (tap === 'dash') sidetone.markDash();
           runInstantAction(tap);
-        } else {
-          runInstantAction(tap);
         }
+        // Single-shot 'space' and 'diacritic' wait for mouseup so simultaneous
+        // Left+Right chord detection can cancel them cleanly before emission.
         return true;
       }
 
@@ -338,6 +338,9 @@
       sidetone.stop();
 
       if (!cur.hold) {
+        if (cur.tap === 'space' || cur.tap === 'diacritic') {
+          runInstantAction(cur.tap);
+        }
         return true;
       }
 

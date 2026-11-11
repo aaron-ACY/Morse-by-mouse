@@ -20,7 +20,7 @@
     },
     WAITING_FOR_TONE: {
       badge: 'Tone Mode',
-      desc: 'Đang chờ nhập thanh điệu'
+      desc: 'Đang chờ thanh điệu hoặc đổi dấu'
     }
   };
 
@@ -120,10 +120,6 @@
     return (isUpper ? lower.toUpperCase() : lower).normalize('NFC');
   }
 
-  function getAvailableModifiersForBase(base) {
-    return Object.values(CHARACTER_MODIFIERS).filter((m) => m.base === base);
-  }
-
   function canEnterDiacriticMode(char) {
     if (!char) {
       return {
@@ -146,15 +142,7 @@
       return {
         allowed: false,
         nextState: null,
-        reason: `Ký tự "${char}" đã hoàn chỉnh, không thể thêm dấu`
-      };
-    }
-
-    if (meta.toneKey && (!meta.isVowel || meta.modifierKey || getAvailableModifiersForBase(meta.base).length === 0)) {
-      return {
-        allowed: false,
-        nextState: null,
-        reason: `Ký tự "${char}" đã có dấu thanh và không thể thêm dấu`
+        reason: `Ký tự "${char}" đã hoàn chỉnh, không có dấu khác`
       };
     }
 
@@ -174,10 +162,10 @@
   }
 
   /**
-   * Vietnamese Diacritic Parser: validates and applies a diacritic or tone Morse sequence
-   * onto `currentChar` respecting `stateMode` and all Vietnamese rules.
+   * Vietnamese Diacritic Parser: validates and applies (or replaces) a diacritic or
+   * tone Morse sequence onto `currentChar`.
    */
-  function applyVietnameseCode(currentChar, code, stateMode = STATES.WAITING_FOR_DIACRITIC) {
+  function applyVietnameseCode(currentChar, code, _stateMode = STATES.WAITING_FOR_DIACRITIC) {
     if (!code) {
       return { ok: false, errorCode: 'empty', message: 'Chưa có mã dấu' };
     }
@@ -203,13 +191,6 @@
     }
 
     if (mod) {
-      if (stateMode === STATES.WAITING_FOR_TONE) {
-        return {
-          ok: false,
-          errorCode: 'tone_only',
-          message: 'Đã có dấu tạo chữ — chỉ nhập thanh điệu (Sắc, Huyền, Hỏi, Ngã, Nặng)'
-        };
-      }
       if (meta.base !== mod.base) {
         return {
           ok: false,
@@ -237,6 +218,7 @@
         kind: 'modifier',
         char: nextChar,
         previous: currentChar,
+        replaced: meta.modifierKey !== null,
         code,
         label: mod.label
       };
@@ -251,11 +233,11 @@
       };
     }
 
-    if (meta.toneKey !== null) {
+    if (meta.toneKey === tone.key) {
       return {
         ok: false,
-        errorCode: 'duplicate_tone',
-        message: `Không được áp dụng hai dấu thanh lên "${currentChar}"`
+        errorCode: 'same_tone',
+        message: `"${currentChar}" đã có dấu ${tone.label}`
       };
     }
 
@@ -273,6 +255,7 @@
       kind: 'tone',
       char: nextChar,
       previous: currentChar,
+      replaced: meta.toneKey !== null,
       code,
       label: tone.label
     };

@@ -15,7 +15,7 @@
     : {
         NORMAL: { badge: 'Normal Mode', desc: 'Đang nhập chữ cái' },
         WAITING_FOR_DIACRITIC: { badge: 'Diacritic Mode', desc: 'Đang chờ nhập dấu' },
-        WAITING_FOR_TONE: { badge: 'Tone Mode', desc: 'Đang chờ nhập thanh điệu' }
+        WAITING_FOR_TONE: { badge: 'Tone Mode', desc: 'Đang chờ thanh điệu hoặc đổi dấu' }
       };
   const { createMorseEngine, DEFAULT_CONFIG } = window.MorseEngine;
   const {
@@ -38,7 +38,7 @@
   };
 
   const DEFAULTS = {
-    enabled: true,
+    enabled: false,
     scope: 'always',
     dashThresholdMs: DEFAULT_CONFIG.dashThresholdMs,
     letterGapMs: DEFAULT_CONFIG.letterGapMs,
