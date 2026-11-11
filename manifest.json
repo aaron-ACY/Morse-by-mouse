@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Morse by Mouse (Chuột Phải)",
+  "version": "1.3.0",
+  "description": "Gõ mã Morse bằng chuột trên mọi trang web — tùy chỉnh nút bấm (dot, dash, space, xóa) dễ dàng bằng dấu +.",
+  "permissions": ["storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Morse by Mouse (Alt+M)",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "commands": {
+    "toggle-morse": {
+      "suggested_key": {
+        "default": "Alt+M"
+      },
+      "description": "Bật hoặc tắt chế độ gõ Morse bằng chuột phải"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/morse-table.js",
+        "src/vietnamese-morse.js",
+        "src/morse-engine.js",
+        "src/morse-bindings.js",
+        "src/audio.js",
+        "src/text-inserter.js",
+        "src/hud-layout.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
+

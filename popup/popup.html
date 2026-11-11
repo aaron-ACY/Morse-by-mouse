@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morse Chuột Phải</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="title-wrap">
+          <div class="logo"><span class="sym-dot">·</span><span class="sym-dash">—</span></div>
+          <div>
+            <h1>Morse by Mouse</h1>
+            <p class="subtitle">Bấm dấu <b>+</b> rồi nhấn/giữ nút chuột để gán</p>
+          </div>
+        </div>
+        <label class="switch" title="Bật / Tắt Extension (Alt+M)">
+          <input
+            type="checkbox"
+            id="enabledToggle"
+            aria-label="Bật / Tắt Extension (Alt+M)"
+            title="Bật / Tắt Extension (Alt+M)"
+          />
+          <span class="slider"></span>
+        </label>
+      </header>
+
+      <section class="card">
+        <div class="row-between">
+          <span class="section-label">Menu gán nút chuột</span>
+          <button type="button" id="resetBindingsBtn" class="text-btn">Mặc định</button>
+        </div>
+
+        <div class="action-menu" id="actionMenu">
+          <div class="action-row" data-action="dot">
+            <div class="action-info">
+              <span class="action-badge dot">·</span>
+              <div>
+                <div class="action-name">Dots (Chấm)</div>
+                <div class="action-binding" id="bindLabel-dot">Chuột phải • Nhấn</div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="plus-btn" data-bind-action="dot" title="Nhấn để tự nhận nút chuột">+</button>
+              <button type="button" class="clear-btn" data-clear-action="dot" title="Bỏ gán">×</button>
+            </div>
+          </div>
+
+          <div class="action-row" data-action="dash">
+            <div class="action-info">
+              <span class="action-badge dash">—</span>
+              <div>
+                <div class="action-name">Dash (Gạch)</div>
+                <div class="action-binding" id="bindLabel-dash">Chuột phải • Nhấn giữ</div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="plus-btn" data-bind-action="dash" title="Nhấn để tự nhận nút chuột">+</button>
+              <button type="button" class="clear-btn" data-clear-action="dash" title="Bỏ gán">×</button>
+            </div>
+          </div>
+
+          <div class="action-row" data-action="space">
+            <div class="action-info">
+              <span class="action-badge space">␣</span>
+              <div>
+                <div class="action-name">Space (Dấu cách)</div>
+                <div class="action-binding" id="bindLabel-space">Chuột trái • Nhấn</div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="plus-btn" data-bind-action="space" title="Nhấn để tự nhận nút chuột">+</button>
+              <button type="button" class="clear-btn" data-clear-action="space" title="Bỏ gán">×</button>
+            </div>
+          </div>
+
+          <div class="action-row" data-action="delete">
+            <div class="action-info">
+              <span class="action-badge del">⌫</span>
+              <div>
+                <div class="action-name">Xóa (Backspace)</div>
+                <div class="action-binding" id="bindLabel-delete">Con lăn giữa • Nhấn</div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="plus-btn" data-bind-action="delete" title="Nhấn để tự nhận nút chuột">+</button>
+              <button type="button" class="clear-btn" data-clear-action="delete" title="Bỏ gán">×</button>
+            </div>
+          </div>
+
+          <div class="action-row" data-action="diacritic">
+            <div class="action-info">
+              <span class="action-badge diacritic">ă</span>
+              <div>
+                <div class="action-name">Dấu Việt (ESC)</div>
+                <div class="action-binding" id="bindLabel-diacritic">Chưa gán</div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="plus-btn" data-bind-action="diacritic" title="Nhấn để tự nhận nút chuột">+</button>
+              <button type="button" class="clear-btn" data-clear-action="diacritic" title="Bỏ gán">×</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="capture-panel" id="capturePanel" hidden>
+          <div class="row-between">
+            <span class="capture-title" id="captureTitle">Đang nhận nút...</span>
+            <button type="button" id="cancelBindBtn" class="mini-cancel">Hủy (Esc)</button>
+          </div>
+          <div class="capture-sub" id="captureSub">
+            Bấm nhanh = <b>Nhấn</b> &nbsp;|&nbsp; Giữ ≥ 200ms = <b>Nhấn giữ</b> (trái, phải, giữa, nút hông...)
+          </div>
+          <div class="capture-bar-track">
+            <div class="capture-bar-fill" id="captureBarFill"></div>
+          </div>
+        </div>
+
+        <p class="hint" id="bindFeedback">
+          Mẹo: giữ <b>Shift + Click</b> bất kỳ lúc nào để dùng chuột bình thường.
+        </p>
+      </section>
+
+      <section class="card test-card">
+        <div class="row-between">
+          <span class="section-label">Thử gõ chuột tại đây (ESC thêm dấu)</span>
+          <span class="live-morse" id="testLiveMorse">Sẵn sàng</span>
+        </div>
+        <div class="vn-status-row" id="testVnModeRow">
+          <span class="vn-test-badge" id="testVnBadge">Normal Mode</span>
+          <span class="vn-test-desc" id="testVnDesc">Đang nhập chữ cái</span>
+          <span class="vn-test-char" id="testVnChar" hidden></span>
+          <button type="button" class="vn-esc-btn" id="testVnEscBtn" title="Bật/tắt chế độ thêm dấu tiếng Việt (ESC)">ESC Dấu</button>
+        </div>
+        <textarea
+          id="testArea"
+          rows="2"
+          placeholder="Bấm vào đây rồi thử gõ Morse; nhấn ESC để thêm dấu tiếng Việt..."
+        ></textarea>
+        <div class="vn-test-notice" id="testVnNotice" hidden></div>
+      </section>
+
+      <section class="card">
+        <div class="section-label">Phạm vi &amp; Tùy chọn</div>
+        <div class="segmented" id="scopeControl">
+          <button type="button" data-scope="always" class="seg-btn active">Mọi trang web</button>
+          <button type="button" data-scope="inputs-only" class="seg-btn">Chỉ ô nhập liệu</button>
+        </div>
+
+        <div class="toggles-grid">
+          <label class="check-pill">
+            <input type="checkbox" id="autoSpaceToggle" />
+            <span>Tự động cách</span>
+          </label>
+          <label class="check-pill">
+            <input type="checkbox" id="soundToggle" />
+            <span>Âm thanh bíp</span>
+          </label>
+          <label class="check-pill">
+            <input type="checkbox" id="hudToggle" />
+            <span>Hiện HUD nổi</span>
+          </label>
+          <label class="check-pill">
+            <input type="checkbox" id="upperToggle" />
+            <span>Chữ HOA (ABC)</span>
+          </label>
+        </div>
+
+        <div class="range-item">
+          <div class="row-between">
+            <label for="soundVolume">Âm lượng bíp</label>
+            <span class="val" id="soundVolumeVal">80%</span>
+          </div>
+          <input type="range" id="soundVolume" min="10" max="100" step="5" />
+        </div>
+      </section>
+
+      <details class="card">
+        <summary>Tốc độ &amp; Ngưỡng nhấn giữ</summary>
+        <div class="details-body">
+          <div class="row-between">
+            <span class="hint">Chọn nhanh mức tốc độ</span>
+            <div class="presets">
+              <button type="button" class="preset-btn" data-preset="slow">Chậm</button>
+              <button type="button" class="preset-btn" data-preset="normal">Chuẩn</button>
+              <button type="button" class="preset-btn" data-preset="fast">Nhanh</button>
+            </div>
+          </div>
+
+          <div class="range-item">
+            <div class="row-between">
+              <label for="dashThreshold">Ngưỡng nhấn giữ (— / giữ nút)</label>
+              <span class="val" id="dashThresholdVal">200 ms</span>
+            </div>
+            <input type="range" id="dashThreshold" min="100" max="500" step="10" />
+          </div>
+
+          <div class="range-item">
+            <div class="row-between">
+              <label for="letterGap">Thời gian chờ chốt chữ</label>
+              <span class="val" id="letterGapVal">600 ms</span>
+            </div>
+            <input type="range" id="letterGap" min="250" max="1500" step="25" />
+          </div>
+
+          <div class="range-item">
+            <div class="row-between">
+              <label for="wordGap">Thời gian chờ tự cách</label>
+              <span class="val" id="wordGapVal">1400 ms</span>
+            </div>
+            <input type="range" id="wordGap" min="600" max="3000" step="50" />
+          </div>
+        </div>
+      </details>
+
+      <details class="card cheat-card">
+        <summary>Bảng mã Morse</summary>
+        <div id="referenceContainer" class="ref-container"></div>
+      </details>
+    </div>
+
+    <script src="../src/morse-table.js"></script>
+    <script src="../src/vietnamese-morse.js"></script>
+    <script src="../src/morse-engine.js"></script>
+    <script src="../src/morse-bindings.js"></script>
+    <script src="../src/audio.js"></script>
+    <script src="../src/text-inserter.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
