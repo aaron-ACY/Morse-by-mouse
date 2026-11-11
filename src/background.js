@@ -92,6 +92,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'toggle-morse') return;
-  const { showHud } = await chrome.storage.local.get({ showHud: DEFAULT_SETTINGS.showHud });
+  const { enabled, showHud } = await chrome.storage.local.get({
+    enabled: DEFAULT_SETTINGS.enabled,
+    showHud: DEFAULT_SETTINGS.showHud
+  });
+  if (!enabled) return;
   await chrome.storage.local.set({ showHud: !showHud });
 });

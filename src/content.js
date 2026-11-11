@@ -1649,6 +1649,8 @@
   window.addEventListener(
     'keydown',
     (e) => {
+      if (!settings.enabled) return;
+
       if (
         !chrome?.runtime?.id &&
         e.altKey &&
@@ -1667,8 +1669,6 @@
         applySettings({ showHud: nextShow });
         return;
       }
-
-      if (!settings.enabled) return;
 
       const activeEditable = getActiveEditable();
       const snap = engine.getSnapshot();

@@ -26,7 +26,7 @@
       "suggested_key": {
         "default": "Alt+M"
       },
-      "description": "Hiện hoặc tắt hẳn popup hỗ trợ nổi (HUD)"
+      "description": "Hiện hoặc tắt hẳn popup hỗ trợ nổi (HUD) khi extension đang bật"
     }
   },
   "content_scripts": [

@@ -8,7 +8,7 @@ Chrome / Edge (Chromium Manifest V3) extension cho phép **gõ chữ cái, số,
 
 - **Bật / Tắt plugin**: Nhấn cùng lúc **Chuột trái + Chuột phải** ở bất kỳ đâu trên trang (hoặc bật công tắc trong popup extension).
   > Mặc định sau khi cài đặt và mỗi khi mở lại trình duyệt, plugin luôn ở trạng thái **Tắt (`OFF`)** để đảm bảo thao tác chuột bình thường.
-- **Hiện / Tắt hẳn popup hỗ trợ nổi (HUD)**: Nhấn **`Alt + M`** (tắt hoàn toàn, không làm mờ; nhấn lại để mở lại).
+- **Hiện / Tắt hẳn popup hỗ trợ nổi (HUD)**: Nhấn **`Alt + M`** (chỉ hoạt động khi plugin đang bật; tắt hoàn toàn, không làm mờ; nhấn lại để mở lại).
 - **Dùng chuột bình thường tạm thời**: Giữ **`Shift + Click`** bất kỳ lúc nào (mở menu chuột phải, đặt con trỏ, bôi đen văn bản...).
 
 ### Thiết lập chuột mặc định
